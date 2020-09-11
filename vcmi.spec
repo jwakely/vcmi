@@ -1,7 +1,7 @@
 Name:           vcmi
 Summary:        Heroes of Might and Magic 3 game engine
 Version:        0.99
-Release:        10%{?dist}
+Release:        11%{?dist}
 License:        GPLv2+
 URL:            https://vcmi.eu/
 
@@ -21,6 +21,10 @@ Patch2:             %{name}-mods.patch
 # Boost 1.69 failures
 # tribool casts + https://github.com/vcmi/vcmi/commit/edcaaf036acb76882df2274f4df2aeef3c84525e
 Patch3:             %{name}-boost-1.69.patch
+
+# Boost 1.73 failures
+# https://github.com/vcmi/vcmi/commit/ac81d0f7b42fb535748ec311ba877a6e6216567b
+Patch4:             %{name}-boost-1.73.patch
 
 # The Koji builder gets killed here, but I don't expect people to use this there
 ExcludeArch:    ppc64le
@@ -70,15 +74,10 @@ Data files for the VCMI project, a %{summary}.
 
 
 %prep
-%setup -q -a2
-
-%patch1 -p1
+%autosetup -p1 -a2
 
 # mods from Source2:
 mv vcmi/Mods/* Mods && rm -rf vcmi
-%patch2 -p1
-
-%patch3 -p1
 
 dos2unix README.md README.linux license.txt AUTHORS ChangeLog
 
@@ -87,15 +86,15 @@ dos2unix README.md README.linux license.txt AUTHORS ChangeLog
 %cmake -DENABLE_TEST=0 -UCMAKE_INSTALL_LIBDIR
 
 %ifarch %{ix86} x86_64
-%make_build
+%cmake_build
 %else
 # not enough memory in Koji for parallel build
-make
+make -C "%{_vpath_builddir}"
 %endif
 
 
 %install
-%make_install
+%cmake_install
 
 
 %check
@@ -129,6 +128,10 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/*.desktop
 
 
 %changelog
+* Fri Sep 11 2020 Jonathan Wakely <jwakely@redhat.com> - 0.99-11
+- Patched for Boost 1.73.0 API changes
+- Updated for CMake out-of-source build
+
 * Tue Aug 18 2020 RPM Fusion Release Engineering <leigh123linux@gmail.com> - 0.99-10
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_33_Mass_Rebuild
 
